@@ -9,26 +9,31 @@
     <div class="list-task">
       <ul>
         <li v-for="item in listTask" :key="item.clock">
-          <span class="delete-task" v-on:click="deleteTask(item.clock)">&times;</span>
-          {{ item.name }}
+          <span class="delete-task" v-on:click="openDeleteModal(item.clock)">&times;</span>
+          <span class="complete" v-on:click="completeTask(item.clock)">&#x2714;</span>
+          <span v-bind:class="{ task_completed: item.status === 'completed' }">{{ item.name }}</span>
         </li>
       </ul>
     </div>
+    <DeleteTaskModal :time="timeSelected" />
   </div>
 </template>
 
 <script>
 import TimePicker from "./TimePicker";
+import DeleteTaskModal from "./DeleteTaskModal";
 
 export default {
   name: "Main",
   components: {
-    TimePicker
+    TimePicker,
+    DeleteTaskModal
   },
   data: function() {
     return {
       listTask: [],
-      taskName: ""
+      taskName: "",
+      timeSelected: ""
     };
   },
   methods: {
@@ -37,16 +42,39 @@ export default {
       timePickerModal.style.display = "block";
     },
     saveTask: function(time) {
-      this.listTask.push({ name: this.taskName, clock: time });
+      this.listTask.push({
+        name: this.taskName,
+        clock: time,
+        status: "not completed"
+      });
       this.taskName = "";
       const timePickerModal = document.getElementById("timepicker");
       timePickerModal.style.display = "none";
+    },
+    openDeleteModal: function(time) {
+      this.timeSelected = time;
+      const deleteModal = document.getElementById("delete-modal");
+      deleteModal.style.display = "block";
     },
     deleteTask: function(time) {
       let newListTask = this.listTask.filter(task => {
         if (task.clock !== time) {
           return task;
         }
+      });
+      this.listTask = newListTask;
+      const deleteModal = document.getElementById("delete-modal");
+      deleteModal.style.display = "none";
+    },
+    completeTask: function(time) {
+      let newListTask = this.listTask.map(task => {
+        if (task.clock === time) {
+          return {
+            ...task,
+            status: "completed"
+          };
+        }
+        return task;
       });
       this.listTask = newListTask;
     }
@@ -102,10 +130,10 @@ ul {
 }
 
 li {
+  display: flex;
   height: 40px;
   line-height: 40px;
   font-size: 25px;
-  /* color: #fff; */
   text-align: left;
   padding: 4px;
   background: #fff;
@@ -113,23 +141,42 @@ li {
   margin-top: 5px;
 }
 
-.delete-task {
-  display: none;
+.delete-task,
+.complete {
   width: 40px;
   height: 40px;
-  background: red;
+  box-sizing: border-box;
   padding: 0 5px;
+  margin-right: 5px;
   color: #fff;
   cursor: pointer;
+  text-align: center;
+}
+
+.delete-task {
+  display: none;
+  background: red;
+}
+
+.complete {
+  display: none;
+  background: #02ca5d;
+}
+
+.task_completed {
+  text-decoration: line-through;
 }
 
 li:hover {
   width: 480px;
-  font-style: italic;
   font-weight: bold;
 }
 
 li:hover > .delete-task {
+  display: inline;
+}
+
+li:hover > .complete {
   display: inline;
 }
 </style>
